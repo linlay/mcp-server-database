@@ -1,0 +1,9 @@
+name: local-sqlite
+description: Local SQLite file for quick tests
+driver: sqlite
+dsn: file:./tmp/mcp-demo.db?cache=shared
+allow_write: true
+allow_ddl: true
+max_open_conns: 1
+max_idle_conns: 1
+conn_max_lifetime_seconds: 0

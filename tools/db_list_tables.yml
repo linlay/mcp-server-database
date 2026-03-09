@@ -1,0 +1,16 @@
+type: function
+name: db_list_tables
+description: |
+  List tables and views in one schema for the selected connection.
+inputSchema:
+  type: object
+  properties:
+    connection_name:
+      type: string
+      description: Configured connection name.
+    schema:
+      type: string
+      description: Schema name. Defaults to the driver's default schema.
+  required:
+    - connection_name
+  additionalProperties: false

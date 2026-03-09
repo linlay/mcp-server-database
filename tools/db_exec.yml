@@ -1,0 +1,20 @@
+type: function
+name: db_exec
+description: |
+  Execute one write statement such as insert, update, delete, or replace.
+inputSchema:
+  type: object
+  properties:
+    connection_name:
+      type: string
+      description: Configured connection name.
+    sql:
+      type: string
+      description: One DML statement using the target database's native syntax.
+    args:
+      type: array
+      description: Positional bind arguments.
+  required:
+    - connection_name
+    - sql
+  additionalProperties: false

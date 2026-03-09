@@ -1,0 +1,17 @@
+type: function
+name: db_ddl
+description: |
+  Execute one DDL statement such as create, alter, drop, truncate, or rename.
+inputSchema:
+  type: object
+  properties:
+    connection_name:
+      type: string
+      description: Configured connection name.
+    sql:
+      type: string
+      description: One DDL statement using the target database's native syntax.
+  required:
+    - connection_name
+    - sql
+  additionalProperties: false

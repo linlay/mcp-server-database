@@ -1,0 +1,20 @@
+type: function
+name: db_describe_table
+description: |
+  Describe columns, primary key, and indexes for one table.
+inputSchema:
+  type: object
+  properties:
+    connection_name:
+      type: string
+      description: Configured connection name.
+    schema:
+      type: string
+      description: Schema name. Defaults to the driver's default schema.
+    table:
+      type: string
+      description: Table name.
+  required:
+    - connection_name
+    - table
+  additionalProperties: false

@@ -1,0 +1,7 @@
+.env
+bin/
+configs/databases/
+tmp/
+*.db
+*.db-shm
+*.db-wal

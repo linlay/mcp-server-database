@@ -1,0 +1,7 @@
+type: function
+name: db_list_connections
+description: |
+  List configured database connections with driver type and current availability status.
+inputSchema:
+  type: object
+  additionalProperties: false

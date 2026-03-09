@@ -1,0 +1,9 @@
+name: local-postgres
+description: Local PostgreSQL demo database
+driver: postgresql
+dsn: postgres://postgres:change_me@postgres:5432/mcp_demo?sslmode=disable
+allow_write: true
+allow_ddl: true
+max_open_conns: 10
+max_idle_conns: 5
+conn_max_lifetime_seconds: 300

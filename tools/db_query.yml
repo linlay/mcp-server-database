@@ -1,0 +1,25 @@
+type: function
+name: db_query
+description: |
+  Execute one read-only SQL statement and return rows as structured JSON.
+inputSchema:
+  type: object
+  properties:
+    connection_name:
+      type: string
+      description: Configured connection name.
+    sql:
+      type: string
+      description: One read-only SQL statement using the target database's native syntax.
+    args:
+      type: array
+      description: Positional bind arguments.
+    max_rows:
+      type: integer
+      minimum: 1
+      maximum: 1000
+      description: Optional row cap. Effective value is also bounded by server config.
+  required:
+    - connection_name
+    - sql
+  additionalProperties: false

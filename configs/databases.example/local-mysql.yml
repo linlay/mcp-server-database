@@ -1,0 +1,9 @@
+name: local-mysql
+description: Local MySQL demo database
+driver: mysql
+dsn: root:change_me@tcp(mysql:3306)/mcp_demo?parseTime=true
+allow_write: true
+allow_ddl: true
+max_open_conns: 10
+max_idle_conns: 5
+conn_max_lifetime_seconds: 300
