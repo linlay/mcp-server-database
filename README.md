@@ -184,3 +184,4 @@ curl -sS -X POST http://localhost:11968/mcp \
 - 每次工具调用只执行一条 SQL，不支持跨请求事务。
 - `db_query` 只允许只读语句；`db_exec` 只允许 DML；`db_ddl` 只允许 DDL。
 - 工具使用目标数据库原生 SQL 和原生占位符风格，不做跨方言改写。
+# mcp-server-database
