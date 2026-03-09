@@ -18,7 +18,8 @@
 
 ```bash
 cp .env.example .env
-cp -R configs/databases.example configs/databases
+mkdir -p configs/databases
+cp configs/local-*.example.yml configs/databases/
 mkdir -p tmp
 make run
 ```
@@ -27,7 +28,8 @@ stdio 模式：
 
 ```bash
 cp .env.example .env
-cp -R configs/databases.example configs/databases
+mkdir -p configs/databases
+cp configs/local-*.example.yml configs/databases/
 MCP_TRANSPORT=stdio make run
 ```
 
@@ -41,7 +43,8 @@ make test
 
 ```bash
 cp .env.example .env
-cp -R configs/databases.example configs/databases
+mkdir -p configs/databases
+cp configs/local-*.example.yml configs/databases/
 mkdir -p tmp
 make docker-up
 ```
@@ -49,7 +52,7 @@ make docker-up
 ## 配置说明
 
 - 环境变量契约主维护文件是 `.env.example`，本地真实值写入 `.env`。
-- 数据库连接模板主维护目录是 `configs/databases.example/`，本地真实目录默认是 `configs/databases/`。
+- 数据库连接示例模板放在 `configs/*.example.yml`，本地真实目录默认是 `configs/databases/`。
 - 配置优先级：代码默认值 < 环境变量。
 - `DB_CONNECTIONS_CONFIG_PATH` 可显式指定连接配置目录或单个 YAML 文件；未设置时默认读取 `./configs/databases`。
 

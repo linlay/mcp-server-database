@@ -71,7 +71,7 @@
 - 入口与业务分离：`cmd` 只做启动，业务逻辑进入 `internal`
 - 配置治理：
   - `.env.example` 维护环境变量契约
-  - `.env`、`configs/databases/` 均不得提交
+  - `.env`、`configs/databases/` 均不得提交，`configs/*.example.yml` 可以提交
   - 配置优先级为代码默认值 < 环境变量
 - 日志治理：
   - 统一通过 `internal/observability` 输出

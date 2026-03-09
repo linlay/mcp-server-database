@@ -1,6 +1,7 @@
 .env
 bin/
-configs/databases/
+configs/*.yml
+!configs/*.example.yml
 tmp/
 *.db
 *.db-shm
