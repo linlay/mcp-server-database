@@ -1,7 +1,7 @@
 name: local-postgres
-description: Local PostgreSQL demo database
+description: External PostgreSQL database
 driver: postgresql
-dsn: postgres://postgres:change_me@postgres:5432/mcp_demo?sslmode=disable
+dsn: postgres://your-user:your-password@your-host:5432/your-db?sslmode=disable
 allow_write: true
 allow_ddl: true
 max_open_conns: 10

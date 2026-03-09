@@ -1,7 +1,7 @@
 name: local-mysql
-description: Local MySQL demo database
+description: External MySQL database
 driver: mysql
-dsn: root:change_me@tcp(mysql:3306)/mcp_demo?parseTime=true
+dsn: your-user:your-password@tcp(your-host:3306)/your-db?parseTime=true
 allow_write: true
 allow_ddl: true
 max_open_conns: 10

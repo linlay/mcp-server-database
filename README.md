@@ -14,7 +14,29 @@
 - Go `1.26+`
 - Docker 和 Docker Compose（可选）
 
-本地启动：
+连接外部 MySQL / PostgreSQL：
+
+```bash
+cp .env.example .env
+cp configs/local-mysql.example.yml configs/local-mysql.yml
+cp configs/local-postgres.example.yml configs/local-postgres.yml
+mkdir -p tmp
+make run
+```
+
+将 `configs/local-mysql.yml`、`configs/local-postgres.yml` 里的 `dsn` 改成你自己的云数据库、本机数据库或其他现有数据库地址后，再启动服务。
+
+容器方式启动 MCP 服务本体：
+
+```bash
+cp .env.example .env
+cp configs/local-mysql.example.yml configs/local-mysql.yml
+cp configs/local-postgres.example.yml configs/local-postgres.yml
+mkdir -p tmp
+make docker-up
+```
+
+快速本地验证：
 
 ```bash
 cp .env.example .env
@@ -37,20 +59,12 @@ MCP_TRANSPORT=stdio make run
 make test
 ```
 
-本地联调 MySQL / PostgreSQL：
-
-```bash
-cp .env.example .env
-cp configs/local-mysql.example.yml configs/local-mysql.yml
-cp configs/local-postgres.example.yml configs/local-postgres.yml
-mkdir -p tmp
-make docker-up
-```
-
 ## 配置说明
 
 - 环境变量契约主维护文件是 `.env.example`，本地真实值写入 `.env`。
 - 数据库连接示例模板放在 `configs/*.example.yml`，本地真实连接配置默认放在 `configs/`。
+- `local-mysql.example.yml`、`local-postgres.example.yml` 使用外部数据库 DSN 占位符，复制后必须替换为真实地址和凭据。
+- `local-sqlite.example.yml` 是零依赖示例，用于快速验证服务链路，不代表仅支持 SQLite。
 - 配置优先级：代码默认值 < 环境变量。
 - `DB_CONNECTIONS_CONFIG_PATH` 可显式指定连接配置目录或单个 YAML 文件；未设置时默认读取 `./configs`。
 - 目录扫描会忽略 `*.example.yml` / `*.example.yaml` 模板文件，只加载真实连接配置。
@@ -62,6 +76,7 @@ make docker-up
 - MCP 限流：`MCP_RATE_LIMIT_ENABLED`、`MCP_RATE_LIMIT_RPS`、`MCP_RATE_LIMIT_BURST`
 - Observability：`MCP_OBSERVABILITY_LOG_ENABLED`、`MCP_OBSERVABILITY_LOG_MAX_BODY_LENGTH`、`MCP_OBSERVABILITY_LOG_INCLUDE_HEADERS`
 - Database：`DB_CONNECTIONS_CONFIG_PATH`、`DB_DEFAULT_QUERY_TIMEOUT_SECONDS`、`DB_MAX_RESULT_ROWS`、`DB_MAX_CELL_BYTES`
+- Compose：`HOST_PORT`
 
 连接配置文件字段：
 
@@ -75,7 +90,7 @@ make docker-up
 
 ## 主要 API 用例
 
-以下示例默认服务运行在 `http://localhost:11968`。
+以下示例默认服务运行在 `http://localhost:11965`（基于 `.env.example` 默认值）。
 
 ### 初始化握手
 
@@ -186,4 +201,3 @@ curl -sS -X POST http://localhost:11968/mcp \
 - 每次工具调用只执行一条 SQL，不支持跨请求事务。
 - `db_query` 只允许只读语句；`db_exec` 只允许 DML；`db_ddl` 只允许 DDL。
 - 工具使用目标数据库原生 SQL 和原生占位符风格，不做跨方言改写。
-# mcp-server-database

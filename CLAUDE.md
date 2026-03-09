@@ -17,7 +17,7 @@
   - `gopkg.in/yaml.v3`：解析连接配置和工具定义
   - `github.com/santhosh-tekuri/jsonschema/v5`：工具参数 schema 校验
   - `database/sql` + 驱动：MySQL、pgx、SQLite
-- 部署方式：Docker / Docker Compose 本地编排
+- 部署方式：二进制或 Docker / Docker Compose 启动 MCP 服务本体；数据库实例由外部提供
 
 ## 3. 架构设计
 
@@ -73,6 +73,7 @@
   - `.env.example` 维护环境变量契约
   - `.env`、`configs/` 均不得提交，`configs/*.example.yml` 可以提交
   - 配置优先级为代码默认值 < 环境变量
+  - MySQL / PostgreSQL 示例配置只提供外部 DSN 模板，不内置数据库容器
 - 日志治理：
   - 统一通过 `internal/observability` 输出
   - 默认脱敏 `dsn`、`password`、`token` 等敏感字段
