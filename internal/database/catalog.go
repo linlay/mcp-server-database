@@ -43,6 +43,9 @@ func loadCatalogDir(path string) (Catalog, error) {
 		if ext != ".yml" && ext != ".yaml" {
 			continue
 		}
+		if isExampleConfigFile(entry.Name()) {
+			continue
+		}
 		fileCatalog, err := loadCatalogFile(filepath.Join(path, entry.Name()))
 		if err != nil {
 			return Catalog{}, err
@@ -134,4 +137,9 @@ func normalizeDriver(driver string) string {
 	default:
 		return ""
 	}
+}
+
+func isExampleConfigFile(name string) bool {
+	lowerName := strings.ToLower(strings.TrimSpace(name))
+	return strings.HasSuffix(lowerName, ".example.yml") || strings.HasSuffix(lowerName, ".example.yaml")
 }

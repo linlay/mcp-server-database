@@ -9,7 +9,7 @@ services:
       - .env
     environment:
       MCP_TOOLS_SPEC_LOCATION_PATTERN: "./tools/*.yml"
-      DB_CONNECTIONS_CONFIG_PATH: "./configs/databases"
+      DB_CONNECTIONS_CONFIG_PATH: "./configs"
     ports:
       - "${HOST_PORT:-11968}:${SERVER_PORT:-8080}"
     volumes:

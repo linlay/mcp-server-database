@@ -3,6 +3,7 @@ bin/
 configs/*.yml
 !configs/*.example.yml
 tmp/
+.cache/
 *.db
 *.db-shm
 *.db-wal

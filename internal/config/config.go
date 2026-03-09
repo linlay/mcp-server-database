@@ -72,7 +72,7 @@ func Load() Config {
 			LogIncludeHeaders: readBoolEnv("MCP_OBSERVABILITY_LOG_INCLUDE_HEADERS", false),
 		},
 		Database: DatabaseConfig{
-			ConnectionsConfigPath:      readStringEnv("DB_CONNECTIONS_CONFIG_PATH", "./configs/databases"),
+			ConnectionsConfigPath:      readStringEnv("DB_CONNECTIONS_CONFIG_PATH", "./configs"),
 			DefaultQueryTimeoutSeconds: readIntEnv("DB_DEFAULT_QUERY_TIMEOUT_SECONDS", 15),
 			MaxResultRows:              readIntEnv("DB_MAX_RESULT_ROWS", 200),
 			MaxCellBytes:               readIntEnv("DB_MAX_CELL_BYTES", 4096),

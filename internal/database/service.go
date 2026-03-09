@@ -40,7 +40,7 @@ type dialect interface {
 
 func NewService(cfg Config) (Service, error) {
 	if strings.TrimSpace(cfg.ConnectionsConfigPath) == "" {
-		cfg.ConnectionsConfigPath = "./configs/databases"
+		cfg.ConnectionsConfigPath = "./configs"
 	}
 	if cfg.DefaultQueryTimeout <= 0 {
 		cfg.DefaultQueryTimeout = 15 * time.Second

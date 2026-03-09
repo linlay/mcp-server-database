@@ -65,3 +65,26 @@ dsn: file:./demo-2.db
 		t.Fatal("expected duplicate name error")
 	}
 }
+
+func TestLoadCatalogShouldIgnoreExampleConfigFiles(t *testing.T) {
+	dir := t.TempDir()
+	writeConnectionConfig(t, filepath.Join(dir, "local-sqlite.example.yml"), `name: example
+driver: sqlite
+dsn: file:./example.db
+`)
+	writeConnectionConfig(t, filepath.Join(dir, "local-sqlite.yml"), `name: active
+driver: sqlite
+dsn: file:./active.db
+`)
+
+	catalog, err := LoadCatalog(dir)
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+	if len(catalog.Connections) != 1 {
+		t.Fatalf("expected 1 active connection, got %d", len(catalog.Connections))
+	}
+	if catalog.Connections[0].Name != "active" {
+		t.Fatalf("expected active connection, got %#v", catalog.Connections)
+	}
+}
