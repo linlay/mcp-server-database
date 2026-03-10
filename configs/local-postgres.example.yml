@@ -1,7 +1,8 @@
 name: local-postgres
 description: External PostgreSQL database
-driver: postgresql
-dsn: postgres://your-user:your-password@your-host:5432/your-db?sslmode=disable
+url: postgres://your-host:5432/your-db?sslmode=disable
+username: your-user
+password: your-password
 allow_write: true
 allow_ddl: true
 max_open_conns: 10

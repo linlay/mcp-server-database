@@ -1,7 +1,8 @@
 name: local-mysql
 description: External MySQL database
-driver: mysql
-dsn: your-user:your-password@tcp(your-host:3306)/your-db?parseTime=true
+url: mysql://your-host:3306/your-db?parseTime=true
+username: your-user
+password: your-password
 allow_write: true
 allow_ddl: true
 max_open_conns: 10

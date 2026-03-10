@@ -2,6 +2,7 @@ package database
 
 import (
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -47,6 +48,133 @@ connections:
 	}
 	if len(catalog.Connections) != 1 || catalog.Connections[0].Name != "legacy" {
 		t.Fatalf("unexpected catalog: %#v", catalog)
+	}
+}
+
+func TestLoadCatalogShouldNormalizeMySQLURLConfig(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "mysql.yml")
+	writeConnectionConfig(t, path, `name: demo-mysql
+description: mysql url
+url: mysql://db.example.com:3306/demo?parseTime=true&charset=utf8mb4
+username: demo-user
+password: super-secret
+`)
+
+	catalog, err := LoadCatalog(path)
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+	if got := catalog.Connections[0].DSN; got != "demo-user:super-secret@tcp(db.example.com:3306)/demo?parseTime=true&charset=utf8mb4" {
+		t.Fatalf("unexpected mysql dsn: %q", got)
+	}
+	if got := mysqlDatabaseName(catalog.Connections[0].DSN); got != "demo" {
+		t.Fatalf("expected schema demo, got %q", got)
+	}
+}
+
+func TestLoadCatalogShouldNormalizePostgresURLConfig(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "postgres.yml")
+	writeConnectionConfig(t, path, `name: demo-postgres
+description: postgres url
+url: postgres://db.example.com:5432/demo?sslmode=disable
+username: demo-user
+password: super-secret
+`)
+
+	catalog, err := LoadCatalog(path)
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+	if got := catalog.Connections[0].DSN; got != "postgres://demo-user:super-secret@db.example.com:5432/demo?sslmode=disable" {
+		t.Fatalf("unexpected postgres dsn: %q", got)
+	}
+}
+
+func TestLoadCatalogShouldNormalizeSQLiteURLConfig(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "sqlite.yml")
+	writeConnectionConfig(t, path, `name: demo-sqlite
+description: sqlite url
+url: file:./tmp/demo.db?cache=shared
+`)
+
+	catalog, err := LoadCatalog(path)
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+	if got := catalog.Connections[0].DSN; got != "file:./tmp/demo.db?cache=shared" {
+		t.Fatalf("unexpected sqlite dsn: %q", got)
+	}
+}
+
+func TestLoadCatalogShouldInferSQLiteDriverFromLocalPath(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "sqlite.yml")
+	writeConnectionConfig(t, path, `name: demo-sqlite
+description: sqlite path
+url: ./tmp/demo.db
+`)
+
+	catalog, err := LoadCatalog(path)
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+	if got := catalog.Connections[0].Driver; got != "sqlite" {
+		t.Fatalf("expected sqlite driver, got %q", got)
+	}
+	if got := catalog.Connections[0].DSN; got != "./tmp/demo.db" {
+		t.Fatalf("unexpected sqlite dsn: %q", got)
+	}
+}
+
+func TestLoadCatalogShouldRejectMutuallyExclusiveDSNAndURL(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "broken.yml")
+	writeConnectionConfig(t, path, `name: broken
+driver: mysql
+dsn: demo-user:super-secret@tcp(db.example.com:3306)/demo
+url: mysql://db.example.com:3306/demo
+username: demo-user
+password: super-secret
+`)
+
+	_, err := LoadCatalog(path)
+	if err == nil || !strings.Contains(err.Error(), "dsn and url are mutually exclusive") {
+		t.Fatalf("expected mutually exclusive error, got %v", err)
+	}
+}
+
+func TestLoadCatalogShouldRejectJDBCURL(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "broken.yml")
+	writeConnectionConfig(t, path, `name: broken
+driver: mysql
+url: jdbc:mysql://db.example.com:3306/demo?parseTime=true
+username: demo-user
+password: super-secret
+`)
+
+	_, err := LoadCatalog(path)
+	if err == nil || !strings.Contains(err.Error(), "jdbc") {
+		t.Fatalf("expected jdbc validation error, got %v", err)
+	}
+}
+
+func TestLoadCatalogShouldRejectDriverURLMismatch(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "broken.yml")
+	writeConnectionConfig(t, path, `name: broken
+driver: mysql
+url: postgres://db.example.com:5432/demo?sslmode=disable
+username: demo-user
+password: super-secret
+`)
+
+	_, err := LoadCatalog(path)
+	if err == nil || !strings.Contains(err.Error(), "does not match") {
+		t.Fatalf("expected driver mismatch error, got %v", err)
 	}
 }
 

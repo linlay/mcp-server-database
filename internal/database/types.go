@@ -21,6 +21,9 @@ type ConnectionConfig struct {
 	Name                   string `yaml:"name"`
 	Description            string `yaml:"description"`
 	Driver                 string `yaml:"driver"`
+	URL                    string `yaml:"url"`
+	Username               string `yaml:"username"`
+	Password               string `yaml:"password"`
 	DSN                    string `yaml:"dsn"`
 	AllowWrite             bool   `yaml:"allow_write"`
 	AllowDDL               bool   `yaml:"allow_ddl"`

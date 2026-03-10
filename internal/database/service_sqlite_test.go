@@ -206,8 +206,9 @@ func TestServiceListConnectionsShouldExposeSanitizedFailureReason(t *testing.T) 
 	configDir := filepath.Join(dir, "databases")
 	writeConnectionConfig(t, filepath.Join(configDir, "broken-mysql.yml"), `name: broken-mysql
 description: broken mysql
-driver: mysql
-dsn: demo-user:super-secret@tcp(127.0.0.1:1)/demo?timeout=1s&readTimeout=1s&writeTimeout=1s
+url: mysql://127.0.0.1:1/demo?timeout=1s&readTimeout=1s&writeTimeout=1s
+username: demo-user
+password: super-secret
 allow_write: false
 allow_ddl: false
 `)

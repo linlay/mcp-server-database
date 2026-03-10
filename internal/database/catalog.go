@@ -2,6 +2,7 @@ package database
 
 import (
 	"fmt"
+	neturl "net/url"
 	"os"
 	"path/filepath"
 	"sort"
@@ -103,16 +104,22 @@ func validateCatalog(catalog Catalog) (Catalog, error) {
 		item.Name = strings.TrimSpace(item.Name)
 		item.Description = strings.TrimSpace(item.Description)
 		item.Driver = normalizeDriver(item.Driver)
+		item.URL = strings.TrimSpace(item.URL)
+		item.Username = strings.TrimSpace(item.Username)
 		item.DSN = strings.TrimSpace(item.DSN)
 		if item.Name == "" {
 			return Catalog{}, fmt.Errorf("connection name is required")
 		}
-		if item.Driver == "" {
-			return Catalog{}, fmt.Errorf("connection %s has unsupported driver", item.Name)
+		driver, err := resolveConnectionDriver(*item)
+		if err != nil {
+			return Catalog{}, fmt.Errorf("connection %s: %w", item.Name, err)
 		}
-		if item.DSN == "" {
-			return Catalog{}, fmt.Errorf("connection %s dsn is required", item.Name)
+		item.Driver = driver
+		dsn, err := normalizeConnectionDSN(*item)
+		if err != nil {
+			return Catalog{}, fmt.Errorf("connection %s: %w", item.Name, err)
 		}
+		item.DSN = dsn
 		if _, exists := seen[strings.ToLower(item.Name)]; exists {
 			return Catalog{}, fmt.Errorf("duplicate connection name: %s", item.Name)
 		}
@@ -142,4 +149,195 @@ func normalizeDriver(driver string) string {
 func isExampleConfigFile(name string) bool {
 	lowerName := strings.ToLower(strings.TrimSpace(name))
 	return strings.HasSuffix(lowerName, ".example.yml") || strings.HasSuffix(lowerName, ".example.yaml")
+}
+
+func normalizeConnectionDSN(cfg ConnectionConfig) (string, error) {
+	hasDSN := cfg.DSN != ""
+	hasURL := cfg.URL != ""
+	if hasDSN && hasURL {
+		return "", fmt.Errorf("dsn and url are mutually exclusive")
+	}
+	if hasDSN {
+		return cfg.DSN, nil
+	}
+	if !hasURL {
+		return "", fmt.Errorf("dsn or url is required")
+	}
+
+	switch cfg.Driver {
+	case "mysql":
+		return normalizeMySQLURL(cfg.URL, cfg.Username, cfg.Password)
+	case "postgresql":
+		return normalizePostgresURL(cfg.URL, cfg.Username, cfg.Password)
+	case "sqlite":
+		return normalizeSQLiteURL(cfg.URL, cfg.Username, cfg.Password)
+	default:
+		return "", fmt.Errorf("has unsupported driver")
+	}
+}
+
+func resolveConnectionDriver(cfg ConnectionConfig) (string, error) {
+	if cfg.URL != "" {
+		inferredDriver, err := inferDriverFromURL(cfg.URL)
+		if err != nil {
+			return "", err
+		}
+		if cfg.Driver != "" && cfg.Driver != inferredDriver {
+			return "", fmt.Errorf("driver %q does not match url-inferred driver %q", cfg.Driver, inferredDriver)
+		}
+		return inferredDriver, nil
+	}
+
+	if cfg.DSN == "" {
+		return "", fmt.Errorf("dsn or url is required")
+	}
+	if cfg.Driver != "" {
+		return cfg.Driver, nil
+	}
+	return "", fmt.Errorf("driver is required when dsn is used")
+}
+
+func inferDriverFromURL(rawURL string) (string, error) {
+	trimmed := strings.TrimSpace(rawURL)
+	if trimmed == "" {
+		return "", fmt.Errorf("url is required")
+	}
+	if strings.HasPrefix(strings.ToLower(trimmed), "jdbc:") {
+		return "", fmt.Errorf("url does not support jdbc prefix")
+	}
+
+	parsed, err := neturl.Parse(trimmed)
+	if err == nil {
+		switch strings.ToLower(parsed.Scheme) {
+		case "mysql":
+			return "mysql", nil
+		case "postgres", "postgresql":
+			return "postgresql", nil
+		case "file":
+			return "sqlite", nil
+		case "":
+			// Fall through to local path detection.
+		default:
+			return "", fmt.Errorf("url has unsupported scheme %q", parsed.Scheme)
+		}
+	}
+
+	if looksLikeSQLitePath(trimmed) {
+		return "sqlite", nil
+	}
+	return "", fmt.Errorf("url must start with mysql://, postgres://, postgresql://, file:, or be a local sqlite path")
+}
+
+func looksLikeSQLitePath(value string) bool {
+	trimmed := strings.TrimSpace(value)
+	if trimmed == "" {
+		return false
+	}
+	if strings.Contains(trimmed, "://") {
+		return false
+	}
+	return strings.HasPrefix(trimmed, "/") ||
+		strings.HasPrefix(trimmed, "./") ||
+		strings.HasPrefix(trimmed, "../") ||
+		strings.HasPrefix(trimmed, "~/") ||
+		(!strings.Contains(trimmed, ":") && !strings.Contains(trimmed, "@"))
+}
+
+func normalizeMySQLURL(rawURL string, username string, password string) (string, error) {
+	if strings.HasPrefix(strings.ToLower(rawURL), "jdbc:") {
+		return "", fmt.Errorf("url does not support jdbc prefix")
+	}
+	if err := validateCredentials(username, password); err != nil {
+		return "", err
+	}
+
+	parsed, err := neturl.Parse(rawURL)
+	if err != nil {
+		return "", fmt.Errorf("has invalid mysql url: %w", err)
+	}
+	if !strings.EqualFold(parsed.Scheme, "mysql") {
+		return "", fmt.Errorf("url must start with mysql://")
+	}
+	if parsed.Host == "" {
+		return "", fmt.Errorf("mysql url host is required")
+	}
+	if parsed.User != nil && parsed.User.String() != "" {
+		return "", fmt.Errorf("mysql url must not include username or password")
+	}
+	if parsed.Fragment != "" {
+		return "", fmt.Errorf("mysql url must not include a fragment")
+	}
+
+	var builder strings.Builder
+	if username != "" {
+		builder.WriteString(username)
+		if password != "" {
+			builder.WriteString(":")
+			builder.WriteString(password)
+		}
+		builder.WriteString("@")
+	}
+	builder.WriteString("tcp(")
+	builder.WriteString(parsed.Host)
+	builder.WriteString(")/")
+	builder.WriteString(strings.TrimPrefix(parsed.Path, "/"))
+	if parsed.RawQuery != "" {
+		builder.WriteString("?")
+		builder.WriteString(parsed.RawQuery)
+	}
+	return builder.String(), nil
+}
+
+func normalizePostgresURL(rawURL string, username string, password string) (string, error) {
+	if strings.HasPrefix(strings.ToLower(rawURL), "jdbc:") {
+		return "", fmt.Errorf("url does not support jdbc prefix")
+	}
+	if err := validateCredentials(username, password); err != nil {
+		return "", err
+	}
+
+	parsed, err := neturl.Parse(rawURL)
+	if err != nil {
+		return "", fmt.Errorf("has invalid postgres url: %w", err)
+	}
+	scheme := strings.ToLower(parsed.Scheme)
+	if scheme != "postgres" && scheme != "postgresql" {
+		return "", fmt.Errorf("url must start with postgres:// or postgresql://")
+	}
+	if parsed.Host == "" {
+		return "", fmt.Errorf("postgres url host is required")
+	}
+	if parsed.User != nil && parsed.User.String() != "" {
+		return "", fmt.Errorf("postgres url must not include username or password")
+	}
+	if username != "" {
+		if password != "" {
+			parsed.User = neturl.UserPassword(username, password)
+		} else {
+			parsed.User = neturl.User(username)
+		}
+	}
+	return parsed.String(), nil
+}
+
+func normalizeSQLiteURL(rawURL string, username string, password string) (string, error) {
+	if strings.HasPrefix(strings.ToLower(rawURL), "jdbc:") {
+		return "", fmt.Errorf("url does not support jdbc prefix")
+	}
+	if username != "" || password != "" {
+		return "", fmt.Errorf("sqlite url does not support username or password")
+	}
+
+	parsed, err := neturl.Parse(rawURL)
+	if err == nil && parsed.Scheme != "" && parsed.Scheme != "file" {
+		return "", fmt.Errorf("sqlite url must be file:... or a local path")
+	}
+	return rawURL, nil
+}
+
+func validateCredentials(username string, password string) error {
+	if username == "" && password != "" {
+		return fmt.Errorf("password requires username")
+	}
+	return nil
 }

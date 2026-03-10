@@ -24,7 +24,7 @@ mkdir -p tmp
 make run
 ```
 
-将 `configs/local-mysql.yml`、`configs/local-postgres.yml` 里的 `dsn` 改成你自己的云数据库、本机数据库或其他现有数据库地址后，再启动服务。
+将 `configs/local-mysql.yml`、`configs/local-postgres.yml` 里的 `url`、`username`、`password` 改成你自己的云数据库、本机数据库或其他现有数据库地址后，再启动服务。
 
 容器方式启动 MCP 服务本体：
 
@@ -63,7 +63,7 @@ make test
 
 - 环境变量契约主维护文件是 `.env.example`，本地真实值写入 `.env`。
 - 数据库连接示例模板放在 `configs/*.example.yml`，本地真实连接配置默认放在 `configs/`。
-- `local-mysql.example.yml`、`local-postgres.example.yml` 使用外部数据库 DSN 占位符，复制后必须替换为真实地址和凭据。
+- `local-mysql.example.yml`、`local-postgres.example.yml` 使用 `url + username + password` 占位符，复制后必须替换为真实地址和凭据。
 - `local-sqlite.example.yml` 是零依赖示例，用于快速验证服务链路，不代表仅支持 SQLite。
 - 配置优先级：代码默认值 < 环境变量。
 - `DB_CONNECTIONS_CONFIG_PATH` 可显式指定连接配置目录或单个 YAML 文件；未设置时默认读取 `./configs`。
@@ -83,8 +83,10 @@ make test
 - 一个数据库连接对应一个 `yml/yaml` 文件。
 - `name`：MCP 工具里使用的连接名
 - `description`：面向客户端的人类可读描述
-- `driver`：`mysql`、`postgresql`、`sqlite`
-- `dsn`：目标数据库原生 DSN
+- `driver`：可选。使用 `url` 时通常自动推断；仅在保留旧 `dsn` 写法时需要显式指定。
+- `url`：推荐使用的目标数据库地址。MySQL 使用 `mysql://host:port/db?...`，PostgreSQL 使用 `postgres://host:port/db?...` 或 `postgresql://...`，SQLite 使用 `file:...` 或本地路径。
+- `username` / `password`：MySQL、PostgreSQL 的独立凭据字段；SQLite 不支持。
+- `dsn`：兼容旧配置的原生驱动连接串，保留但不再推荐。
 - `allow_write`：是否允许 `db_exec`
 - `allow_ddl`：是否允许 `db_ddl`
 
