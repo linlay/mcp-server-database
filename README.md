@@ -95,7 +95,7 @@ make test
 ### 初始化握手
 
 ```bash
-curl -sS -X POST http://localhost:11968/mcp \
+curl -sS -X POST http://localhost:11965/mcp \
   -H "Content-Type: application/json" \
   -d '{
     "jsonrpc": "2.0",
@@ -115,7 +115,7 @@ curl -sS -X POST http://localhost:11968/mcp \
 ### 查看工具列表
 
 ```bash
-curl -sS -X POST http://localhost:11968/mcp \
+curl -sS -X POST http://localhost:11965/mcp \
   -H "Content-Type: application/json" \
   -d '{"jsonrpc":"2.0","id":"tools-list-1","method":"tools/list","params":{}}'
 ```
@@ -123,7 +123,7 @@ curl -sS -X POST http://localhost:11968/mcp \
 ### 列出已配置连接
 
 ```bash
-curl -sS -X POST http://localhost:11968/mcp \
+curl -sS -X POST http://localhost:11965/mcp \
   -H "Content-Type: application/json" \
   -d '{
     "jsonrpc": "2.0",
@@ -141,7 +141,7 @@ curl -sS -X POST http://localhost:11968/mcp \
 ### 查询表数据
 
 ```bash
-curl -sS -X POST http://localhost:11968/mcp \
+curl -sS -X POST http://localhost:11965/mcp \
   -H "Content-Type: application/json" \
   -d '{
     "jsonrpc": "2.0",
@@ -162,7 +162,7 @@ curl -sS -X POST http://localhost:11968/mcp \
 ### 执行写入
 
 ```bash
-curl -sS -X POST http://localhost:11968/mcp \
+curl -sS -X POST http://localhost:11965/mcp \
   -H "Content-Type: application/json" \
   -d '{
     "jsonrpc": "2.0",
@@ -182,7 +182,7 @@ curl -sS -X POST http://localhost:11968/mcp \
 ### 执行 DDL
 
 ```bash
-curl -sS -X POST http://localhost:11968/mcp \
+curl -sS -X POST http://localhost:11965/mcp \
   -H "Content-Type: application/json" \
   -d '{
     "jsonrpc": "2.0",

@@ -11,13 +11,15 @@ RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -trimpath -ldflags="-s -w" -o
 FROM alpine:3.21
 
 WORKDIR /app
-RUN adduser -D -u 10001 appuser
+RUN apk add --no-cache tzdata \
+    && adduser -D -u 10001 appuser
 
 COPY --from=builder /out/mcp-server /app/mcp-server
 COPY --chown=appuser:appuser tools /app/tools
 COPY --chown=appuser:appuser configs /app/configs
 
 ENV SERVER_PORT=8080 \
+    TZ=Asia/Shanghai \
     MCP_HTTP_MAX_BODY_BYTES=1048576 \
     MCP_TOOLS_SPEC_LOCATION_PATTERN=./tools/*.yml \
     MCP_OBSERVABILITY_LOG_ENABLED=true \
