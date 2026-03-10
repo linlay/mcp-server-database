@@ -136,6 +136,8 @@ curl -sS -X POST http://localhost:11968/mcp \
   }'
 ```
 
+`db_list_connections` 返回的每个连接项包含 `status`，当探测失败时还会额外返回可选字段 `status_reason`，用于展示脱敏后的失败原因，例如网络超时、鉴权失败或 DNS 解析失败。
+
 ### 查询表数据
 
 ```bash

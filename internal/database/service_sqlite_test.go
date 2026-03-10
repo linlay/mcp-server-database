@@ -116,6 +116,9 @@ max_idle_conns: 1
 	if len(connections) != 1 || connections[0].Status != "ready" {
 		t.Fatalf("unexpected connections response: %#v", connections)
 	}
+	if connections[0].StatusReason != "" {
+		t.Fatalf("expected no status reason for ready connection, got %#v", connections[0])
+	}
 
 	tables, err := service.ListTables(ctx, "local-sqlite", "")
 	if err != nil {
@@ -195,6 +198,49 @@ allow_ddl: false
 		SQL:            "insert into demo values (1)",
 	}); err == nil || !strings.Contains(err.Error(), "read-only") {
 		t.Fatalf("expected read-only boundary error, got %v", err)
+	}
+}
+
+func TestServiceListConnectionsShouldExposeSanitizedFailureReason(t *testing.T) {
+	dir := t.TempDir()
+	configDir := filepath.Join(dir, "databases")
+	writeConnectionConfig(t, filepath.Join(configDir, "broken-mysql.yml"), `name: broken-mysql
+description: broken mysql
+driver: mysql
+dsn: demo-user:super-secret@tcp(127.0.0.1:1)/demo?timeout=1s&readTimeout=1s&writeTimeout=1s
+allow_write: false
+allow_ddl: false
+`)
+
+	service, err := NewService(Config{
+		ConnectionsConfigPath: configDir,
+		DefaultQueryTimeout:   2 * time.Second,
+		MaxResultRows:         10,
+		MaxCellBytes:          256,
+	})
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+	defer service.Close()
+
+	connections, err := service.ListConnections(context.Background())
+	if err != nil {
+		t.Fatalf("list connections failed: %v", err)
+	}
+	if len(connections) != 1 {
+		t.Fatalf("expected 1 connection, got %#v", connections)
+	}
+	if connections[0].Status != "error" {
+		t.Fatalf("expected error status, got %#v", connections[0])
+	}
+	if strings.TrimSpace(connections[0].StatusReason) == "" {
+		t.Fatalf("expected failure reason, got %#v", connections[0])
+	}
+	if strings.Contains(connections[0].StatusReason, "super-secret") {
+		t.Fatalf("expected password to be redacted, got %q", connections[0].StatusReason)
+	}
+	if strings.Contains(connections[0].StatusReason, "demo-user:super-secret@") {
+		t.Fatalf("expected DSN userinfo to be redacted, got %q", connections[0].StatusReason)
 	}
 }
 

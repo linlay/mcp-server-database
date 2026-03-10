@@ -95,19 +95,22 @@ func (m *manager) ListConnections(ctx context.Context) ([]ConnectionSummary, err
 	items := make([]ConnectionSummary, 0, len(m.connections))
 	for _, conn := range m.sortedConnections() {
 		status := "ready"
+		statusReason := ""
 		pingCtx, cancel := context.WithTimeout(ctx, time.Second)
 		if err := conn.ping(pingCtx); err != nil {
 			status = "error"
+			statusReason = sanitizeConnectionError(conn.cfg, err)
 		}
 		cancel()
 
 		items = append(items, ConnectionSummary{
-			Name:        conn.cfg.Name,
-			Description: conn.cfg.Description,
-			Driver:      conn.cfg.Driver,
-			AllowWrite:  conn.cfg.AllowWrite,
-			AllowDDL:    conn.cfg.AllowDDL,
-			Status:      status,
+			Name:         conn.cfg.Name,
+			Description:  conn.cfg.Description,
+			Driver:       conn.cfg.Driver,
+			AllowWrite:   conn.cfg.AllowWrite,
+			AllowDDL:     conn.cfg.AllowDDL,
+			Status:       status,
+			StatusReason: statusReason,
 		})
 	}
 	return items, nil

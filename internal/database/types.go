@@ -30,12 +30,13 @@ type ConnectionConfig struct {
 }
 
 type ConnectionSummary struct {
-	Name        string `json:"name"`
-	Description string `json:"description"`
-	Driver      string `json:"driver"`
-	AllowWrite  bool   `json:"allow_write"`
-	AllowDDL    bool   `json:"allow_ddl"`
-	Status      string `json:"status"`
+	Name         string `json:"name"`
+	Description  string `json:"description"`
+	Driver       string `json:"driver"`
+	AllowWrite   bool   `json:"allow_write"`
+	AllowDDL     bool   `json:"allow_ddl"`
+	Status       string `json:"status"`
+	StatusReason string `json:"status_reason,omitempty"`
 }
 
 type SchemaInfo struct {
