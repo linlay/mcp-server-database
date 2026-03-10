@@ -109,6 +109,33 @@ url: file:./tmp/demo.db?cache=shared
 	}
 }
 
+func TestLoadCatalogShouldAggregateDirectoryConnectionsUsingURLConfig(t *testing.T) {
+	dir := t.TempDir()
+	writeConnectionConfig(t, filepath.Join(dir, "a.yml"), `name: alpha
+description: mysql url
+url: mysql://db.example.com:3306/demo?parseTime=true
+username: demo-user
+password: super-secret
+`)
+	writeConnectionConfig(t, filepath.Join(dir, "b.yml"), `name: beta
+description: postgres url
+url: postgres://db.example.com:5432/demo?sslmode=disable
+username: demo-user
+password: super-secret
+`)
+
+	catalog, err := LoadCatalog(dir)
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+	if len(catalog.Connections) != 2 {
+		t.Fatalf("expected 2 connections, got %d", len(catalog.Connections))
+	}
+	if catalog.Connections[0].DSN == "" || catalog.Connections[1].DSN == "" {
+		t.Fatalf("expected normalized dsns, got %#v", catalog.Connections)
+	}
+}
+
 func TestLoadCatalogShouldInferSQLiteDriverFromLocalPath(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "sqlite.yml")

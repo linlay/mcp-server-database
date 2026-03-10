@@ -1,5 +1,6 @@
 type: function
 name: db_list_tables
+label: 数据表列表
 description: |
   List tables and views in one schema for the selected connection.
 inputSchema:

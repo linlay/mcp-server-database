@@ -60,9 +60,10 @@
   - `tools/list`
   - `tools/call`
 - `tools/list` 扩展字段：
+  - `label`：工具的人类可读名称，适合前端直接展示中文名
   - `toolAction: true`：action 工具
   - `toolType` + `viewportKey`：frontend 工具
-  - 当前服务未声明上述字段，所有内置工具都按 backend 工具处理
+  - 当前服务已为内置工具声明 `label`，其余内置工具仍按 backend 工具处理
 - 鉴权现状：
   - 当前 `/mcp` 无内建鉴权，依赖外层网络边界控制
 

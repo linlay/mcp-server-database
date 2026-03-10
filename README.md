@@ -5,6 +5,7 @@
 - MCP 入口：`POST /mcp`（HTTP）或 `stdio`
 - 已实现工具：`db_list_connections`、`db_list_schemas`、`db_list_tables`、`db_describe_table`、`db_list_indexes`、`db_query`、`db_exec`、`db_ddl`
 - 工具契约：`tools/*.yml`
+- 协议文档：`docs/mcp-protocol-definition.md`
 - 协议版本：`2025-06`
 
 ## 快速开始
@@ -121,6 +122,8 @@ curl -sS -X POST http://localhost:11965/mcp \
   -H "Content-Type: application/json" \
   -d '{"jsonrpc":"2.0","id":"tools-list-1","method":"tools/list","params":{}}'
 ```
+
+`tools/list` 返回的每个工具对象都保留原始 `name`，并额外声明中文展示字段 `label`。客户端应优先展示 `label`，但发起 `tools/call` 时仍必须使用 `name`。完整协议说明见 `docs/mcp-protocol-definition.md`。
 
 ### 列出已配置连接
 

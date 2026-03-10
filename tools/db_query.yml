@@ -1,5 +1,6 @@
 type: function
 name: db_query
+label: 执行查询
 description: |
   Execute one read-only SQL statement and return rows as structured JSON.
 inputSchema:

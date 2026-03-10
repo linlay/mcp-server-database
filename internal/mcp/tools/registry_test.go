@@ -58,6 +58,7 @@ func TestRegistryShouldPreserveExtendedMetadataInListTools(t *testing.T) {
 	dir := t.TempDir()
 	writeFile(t, filepath.Join(dir, "frontend.yml"), `type: function
 name: db_demo_frontend
+label: 数据库演示页面
 description: test
 toolType: html
 viewportKey: show_db_demo
@@ -99,8 +100,31 @@ inputSchema:
 	if byName["db_demo_frontend"]["viewportKey"] != "show_db_demo" {
 		t.Fatalf("unexpected viewportKey: %#v", byName["db_demo_frontend"]["viewportKey"])
 	}
+	if byName["db_demo_frontend"]["label"] != "数据库演示页面" {
+		t.Fatalf("unexpected label: %#v", byName["db_demo_frontend"]["label"])
+	}
 	if byName["db_demo_action"]["toolAction"] != true {
 		t.Fatalf("unexpected toolAction: %#v", byName["db_demo_action"]["toolAction"])
+	}
+}
+
+func TestRegistryShouldFailWhenLabelIsEmpty(t *testing.T) {
+	dir := t.TempDir()
+	writeFile(t, filepath.Join(dir, "invalid.yml"), `type: function
+name: db_demo_tool
+label: ""
+description: test
+inputSchema:
+  type: object
+  additionalProperties: false
+`)
+
+	_, err := NewRegistry(filePattern(dir), []ToolHandler{stubHandler{name: "db_demo_tool"}}, log.New(os.Stdout, "", 0))
+	if err == nil {
+		t.Fatal("expected error")
+	}
+	if !strings.Contains(err.Error(), "invalid tool spec") {
+		t.Fatalf("unexpected error: %v", err)
 	}
 }
 
@@ -143,6 +167,21 @@ inputSchema:
 	}
 	if !strings.Contains(err.Error(), "toolAction=true cannot be combined") {
 		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestRegistryShouldMatchToolNamesCaseInsensitively(t *testing.T) {
+	r, err := NewRegistry(projectToolsPattern(), testHandlers(), log.New(os.Stdout, "", 0))
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+
+	item, ok := r.Find("DB_QUERY")
+	if !ok {
+		t.Fatal("expected tool to be found")
+	}
+	if item.Spec.Name != ToolQuery {
+		t.Fatalf("expected %s, got %s", ToolQuery, item.Spec.Name)
 	}
 }
 

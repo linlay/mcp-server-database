@@ -1,5 +1,6 @@
 type: function
 name: db_ddl
+label: 执行 DDL
 description: |
   Execute one DDL statement such as create, alter, drop, truncate, or rename.
 inputSchema:

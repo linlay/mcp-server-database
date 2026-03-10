@@ -9,6 +9,7 @@ const toolMetaSchemaJSON = `{
   "properties": {
     "type": {"type": "string", "minLength": 1},
     "name": {"type": "string", "minLength": 1},
+    "label": {"type": "string", "minLength": 1},
     "description": {"type": "string", "minLength": 1},
     "afterCallHint": {"type": "string"},
     "inputSchema": {"type": "object"},

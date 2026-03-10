@@ -106,6 +106,7 @@ func validateCatalog(catalog Catalog) (Catalog, error) {
 		item.Driver = normalizeDriver(item.Driver)
 		item.URL = strings.TrimSpace(item.URL)
 		item.Username = strings.TrimSpace(item.Username)
+		item.Password = strings.TrimSpace(item.Password)
 		item.DSN = strings.TrimSpace(item.DSN)
 		if item.Name == "" {
 			return Catalog{}, fmt.Errorf("connection name is required")
@@ -115,11 +116,19 @@ func validateCatalog(catalog Catalog) (Catalog, error) {
 			return Catalog{}, fmt.Errorf("connection %s: %w", item.Name, err)
 		}
 		item.Driver = driver
+		hadURL := item.URL != ""
+		hadDSN := item.DSN != ""
 		dsn, err := normalizeConnectionDSN(*item)
 		if err != nil {
 			return Catalog{}, fmt.Errorf("connection %s: %w", item.Name, err)
 		}
 		item.DSN = dsn
+		if hadURL && !hadDSN {
+			// The directory loader validates individual files before aggregating them.
+			// Clear the external URL after deriving the internal DSN so a second validation
+			// pass does not treat the normalized DSN as a user-supplied conflicting field.
+			item.URL = ""
+		}
 		if _, exists := seen[strings.ToLower(item.Name)]; exists {
 			return Catalog{}, fmt.Errorf("duplicate connection name: %s", item.Name)
 		}

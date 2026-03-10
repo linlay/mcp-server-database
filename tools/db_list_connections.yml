@@ -1,5 +1,6 @@
 type: function
 name: db_list_connections
+label: 数据库连接列表
 description: |
   List configured database connections with driver type, current availability status, and a sanitized failure reason when probing fails.
 inputSchema:

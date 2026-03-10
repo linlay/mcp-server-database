@@ -1,5 +1,6 @@
 type: function
 name: db_describe_table
+label: 数据表结构详情
 description: |
   Describe columns, primary key, and indexes for one table.
 inputSchema:

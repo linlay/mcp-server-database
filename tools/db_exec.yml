@@ -1,5 +1,6 @@
 type: function
 name: db_exec
+label: 执行写操作
 description: |
   Execute one write statement such as insert, update, delete, or replace.
 inputSchema:
