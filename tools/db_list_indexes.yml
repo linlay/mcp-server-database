@@ -11,7 +11,7 @@ inputSchema:
       description: Configured connection name.
     schema:
       type: string
-      description: Schema name. Defaults to the driver's default schema.
+      description: Schema name. Defaults to the connection's current default schema/database.
     table:
       type: string
       description: Optional table name.

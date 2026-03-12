@@ -9,8 +9,8 @@ import (
 
 type sqliteDialect struct{}
 
-func (sqliteDialect) DefaultSchema(ConnectionConfig) string {
-	return "main"
+func (sqliteDialect) ResolveDefaultSchema(context.Context, *sql.DB, ConnectionConfig) (string, error) {
+	return "main", nil
 }
 
 func (sqliteDialect) ListSchemas(ctx context.Context, db *sql.DB, _ ConnectionConfig) ([]SchemaInfo, error) {
@@ -34,7 +34,7 @@ func (sqliteDialect) ListSchemas(ctx context.Context, db *sql.DB, _ ConnectionCo
 }
 
 func (d sqliteDialect) ListTables(ctx context.Context, db *sql.DB, _ ConnectionConfig, schema string) ([]TableInfo, error) {
-	schema = normalizeSchema(schema, d.DefaultSchema(ConnectionConfig{}))
+	schema = strings.TrimSpace(schema)
 	query := fmt.Sprintf(`
 		select '%s' as table_schema, name as table_name, upper(type) as table_type
 		from %s.sqlite_master
@@ -59,7 +59,7 @@ func (d sqliteDialect) ListTables(ctx context.Context, db *sql.DB, _ ConnectionC
 }
 
 func (d sqliteDialect) DescribeTable(ctx context.Context, db *sql.DB, _ ConnectionConfig, schema string, table string) (TableDescription, error) {
-	schema = normalizeSchema(schema, d.DefaultSchema(ConnectionConfig{}))
+	schema = strings.TrimSpace(schema)
 	desc := TableDescription{
 		Schema: schema,
 		Name:   table,
@@ -114,7 +114,7 @@ func (d sqliteDialect) DescribeTable(ctx context.Context, db *sql.DB, _ Connecti
 }
 
 func (sqliteDialect) ListIndexes(ctx context.Context, db *sql.DB, _ ConnectionConfig, schema string, table string) ([]IndexInfo, error) {
-	schema = normalizeSchema(schema, "main")
+	schema = strings.TrimSpace(schema)
 	tables := []string{}
 	if strings.TrimSpace(table) != "" {
 		tables = append(tables, strings.TrimSpace(table))

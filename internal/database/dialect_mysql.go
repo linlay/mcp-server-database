@@ -9,8 +9,15 @@ import (
 
 type mysqlDialect struct{}
 
-func (mysqlDialect) DefaultSchema(cfg ConnectionConfig) string {
-	return mysqlDatabaseName(cfg.DSN)
+func (mysqlDialect) ResolveDefaultSchema(ctx context.Context, db *sql.DB, _ ConnectionConfig) (string, error) {
+	var schema sql.NullString
+	if err := db.QueryRowContext(ctx, `select database()`).Scan(&schema); err != nil {
+		return "", fmt.Errorf("resolve default schema: %w", err)
+	}
+	if !schema.Valid || strings.TrimSpace(schema.String) == "" {
+		return "", fmt.Errorf("resolve default schema: database() returned empty")
+	}
+	return strings.TrimSpace(schema.String), nil
 }
 
 func (mysqlDialect) ListSchemas(ctx context.Context, db *sql.DB, _ ConnectionConfig) ([]SchemaInfo, error) {
@@ -35,12 +42,12 @@ func (mysqlDialect) ListSchemas(ctx context.Context, db *sql.DB, _ ConnectionCon
 	return out, rows.Err()
 }
 
-func (d mysqlDialect) ListTables(ctx context.Context, db *sql.DB, cfg ConnectionConfig, schema string) ([]TableInfo, error) {
+func (mysqlDialect) ListTables(ctx context.Context, db *sql.DB, _ ConnectionConfig, schema string) ([]TableInfo, error) {
 	rows, err := db.QueryContext(ctx, `
 		select table_schema, table_name, table_type
 		from information_schema.tables
 		where table_schema = ?
-		order by table_name`, normalizeSchema(schema, d.DefaultSchema(cfg)))
+		order by table_name`, strings.TrimSpace(schema))
 	if err != nil {
 		return nil, err
 	}
@@ -58,7 +65,7 @@ func (d mysqlDialect) ListTables(ctx context.Context, db *sql.DB, cfg Connection
 }
 
 func (d mysqlDialect) DescribeTable(ctx context.Context, db *sql.DB, cfg ConnectionConfig, schema string, table string) (TableDescription, error) {
-	schema = normalizeSchema(schema, d.DefaultSchema(cfg))
+	schema = strings.TrimSpace(schema)
 	description := TableDescription{
 		Schema: schema,
 		Name:   table,

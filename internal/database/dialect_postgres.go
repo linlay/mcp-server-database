@@ -9,8 +9,15 @@ import (
 
 type postgresDialect struct{}
 
-func (postgresDialect) DefaultSchema(ConnectionConfig) string {
-	return "public"
+func (postgresDialect) ResolveDefaultSchema(ctx context.Context, db *sql.DB, _ ConnectionConfig) (string, error) {
+	var schema sql.NullString
+	if err := db.QueryRowContext(ctx, `select current_schema()`).Scan(&schema); err != nil {
+		return "", fmt.Errorf("resolve default schema: %w", err)
+	}
+	if !schema.Valid || strings.TrimSpace(schema.String) == "" {
+		return "", fmt.Errorf("resolve default schema: current_schema() returned empty")
+	}
+	return strings.TrimSpace(schema.String), nil
 }
 
 func (postgresDialect) ListSchemas(ctx context.Context, db *sql.DB, _ ConnectionConfig) ([]SchemaInfo, error) {
@@ -36,12 +43,12 @@ func (postgresDialect) ListSchemas(ctx context.Context, db *sql.DB, _ Connection
 	return out, rows.Err()
 }
 
-func (d postgresDialect) ListTables(ctx context.Context, db *sql.DB, cfg ConnectionConfig, schema string) ([]TableInfo, error) {
+func (postgresDialect) ListTables(ctx context.Context, db *sql.DB, _ ConnectionConfig, schema string) ([]TableInfo, error) {
 	rows, err := db.QueryContext(ctx, `
 		select table_schema, table_name, table_type
 		from information_schema.tables
 		where table_schema = $1
-		order by table_name`, normalizeSchema(schema, d.DefaultSchema(cfg)))
+		order by table_name`, strings.TrimSpace(schema))
 	if err != nil {
 		return nil, err
 	}
@@ -59,7 +66,7 @@ func (d postgresDialect) ListTables(ctx context.Context, db *sql.DB, cfg Connect
 }
 
 func (d postgresDialect) DescribeTable(ctx context.Context, db *sql.DB, cfg ConnectionConfig, schema string, table string) (TableDescription, error) {
-	schema = normalizeSchema(schema, d.DefaultSchema(cfg))
+	schema = strings.TrimSpace(schema)
 	description := TableDescription{
 		Schema: schema,
 		Name:   table,

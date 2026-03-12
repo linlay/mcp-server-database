@@ -31,7 +31,7 @@ type managedConnection struct {
 }
 
 type dialect interface {
-	DefaultSchema(cfg ConnectionConfig) string
+	ResolveDefaultSchema(ctx context.Context, db *sql.DB, cfg ConnectionConfig) (string, error)
 	ListSchemas(ctx context.Context, db *sql.DB, cfg ConnectionConfig) ([]SchemaInfo, error)
 	ListTables(ctx context.Context, db *sql.DB, cfg ConnectionConfig, schema string) ([]TableInfo, error)
 	DescribeTable(ctx context.Context, db *sql.DB, cfg ConnectionConfig, schema string, table string) (TableDescription, error)
@@ -141,7 +141,11 @@ func (m *manager) ListTables(ctx context.Context, connectionName string, schema 
 	if err != nil {
 		return nil, err
 	}
-	return conn.dialect.ListTables(ctx, db, conn.cfg, normalizeSchema(schema, conn.dialect.DefaultSchema(conn.cfg)))
+	resolvedSchema, err := conn.resolveSchema(ctx, db, schema)
+	if err != nil {
+		return nil, err
+	}
+	return conn.dialect.ListTables(ctx, db, conn.cfg, resolvedSchema)
 }
 
 func (m *manager) DescribeTable(ctx context.Context, connectionName string, schema string, table string) (TableDescription, error) {
@@ -158,7 +162,11 @@ func (m *manager) DescribeTable(ctx context.Context, connectionName string, sche
 	if err != nil {
 		return TableDescription{}, err
 	}
-	return conn.dialect.DescribeTable(ctx, db, conn.cfg, normalizeSchema(schema, conn.dialect.DefaultSchema(conn.cfg)), strings.TrimSpace(table))
+	resolvedSchema, err := conn.resolveSchema(ctx, db, schema)
+	if err != nil {
+		return TableDescription{}, err
+	}
+	return conn.dialect.DescribeTable(ctx, db, conn.cfg, resolvedSchema, strings.TrimSpace(table))
 }
 
 func (m *manager) ListIndexes(ctx context.Context, connectionName string, schema string, table string) ([]IndexInfo, error) {
@@ -172,7 +180,11 @@ func (m *manager) ListIndexes(ctx context.Context, connectionName string, schema
 	if err != nil {
 		return nil, err
 	}
-	return conn.dialect.ListIndexes(ctx, db, conn.cfg, normalizeSchema(schema, conn.dialect.DefaultSchema(conn.cfg)), strings.TrimSpace(table))
+	resolvedSchema, err := conn.resolveSchema(ctx, db, schema)
+	if err != nil {
+		return nil, err
+	}
+	return conn.dialect.ListIndexes(ctx, db, conn.cfg, resolvedSchema, strings.TrimSpace(table))
 }
 
 func (m *manager) Query(ctx context.Context, req QueryRequest) (QueryResult, error) {
@@ -398,6 +410,23 @@ func (c *managedConnection) ping(ctx context.Context) error {
 	return db.PingContext(ctx)
 }
 
+func (c *managedConnection) resolveSchema(ctx context.Context, db *sql.DB, schema string) (string, error) {
+	schema = strings.TrimSpace(schema)
+	if schema != "" {
+		return schema, nil
+	}
+
+	resolved, err := c.dialect.ResolveDefaultSchema(ctx, db, c.cfg)
+	if err != nil {
+		return "", err
+	}
+	resolved = strings.TrimSpace(resolved)
+	if resolved == "" {
+		return "", fmt.Errorf("connection %s has no default schema", c.cfg.Name)
+	}
+	return resolved, nil
+}
+
 func resolveDialect(cfg ConnectionConfig) (dialect, string, error) {
 	switch cfg.Driver {
 	case "mysql":
@@ -409,14 +438,6 @@ func resolveDialect(cfg ConnectionConfig) (dialect, string, error) {
 	default:
 		return nil, "", fmt.Errorf("connection %s has unsupported driver", cfg.Name)
 	}
-}
-
-func normalizeSchema(value string, fallback string) string {
-	value = strings.TrimSpace(value)
-	if value == "" {
-		return fallback
-	}
-	return value
 }
 
 func ensureSQLiteDir(dsn string) error {
