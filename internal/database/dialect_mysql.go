@@ -9,6 +9,14 @@ import (
 
 type mysqlDialect struct{}
 
+func (mysqlDialect) Probe(ctx context.Context, db *sql.DB, _ ConnectionConfig) error {
+	var ready int
+	if err := db.QueryRowContext(ctx, `select 1`).Scan(&ready); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (mysqlDialect) ResolveDefaultSchema(ctx context.Context, db *sql.DB, _ ConnectionConfig) (string, error) {
 	var schema sql.NullString
 	if err := db.QueryRowContext(ctx, `select database()`).Scan(&schema); err != nil {

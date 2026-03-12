@@ -29,6 +29,30 @@ func TestServicePostgresIntegration(t *testing.T) {
 	runExternalIntegration(t, "postgresql", dsn, "$1", "create table if not exists mcp_it_users (id bigserial primary key, name text not null)")
 }
 
+func TestServiceMySQLListConnectionsShouldBeReadyOnColdStart(t *testing.T) {
+	dsn := os.Getenv("TEST_MYSQL_DSN")
+	if dsn == "" {
+		t.Skip("TEST_MYSQL_DSN not set")
+	}
+
+	service := newIntegrationService(t, "mysql", dsn)
+	defer service.Close()
+
+	assertIntegrationConnectionReady(t, service)
+}
+
+func TestServicePostgresListConnectionsShouldBeReadyOnColdStart(t *testing.T) {
+	dsn := os.Getenv("TEST_POSTGRES_DSN")
+	if dsn == "" {
+		t.Skip("TEST_POSTGRES_DSN not set")
+	}
+
+	service := newIntegrationService(t, "postgresql", dsn)
+	defer service.Close()
+
+	assertIntegrationConnectionReady(t, service)
+}
+
 func TestServiceMySQLMetadataUsesConnectionDefaultDatabase(t *testing.T) {
 	dsn := os.Getenv("TEST_MYSQL_DSN")
 	if dsn == "" {
@@ -195,4 +219,22 @@ func containsTable(items []TableInfo, table string) bool {
 		}
 	}
 	return false
+}
+
+func assertIntegrationConnectionReady(t *testing.T, service Service) {
+	t.Helper()
+
+	connections, err := service.ListConnections(context.Background())
+	if err != nil {
+		t.Fatalf("list connections: %v", err)
+	}
+	if len(connections) != 1 {
+		t.Fatalf("expected 1 connection, got %#v", connections)
+	}
+	if connections[0].Status != "ready" {
+		t.Fatalf("expected ready status on cold start, got %#v", connections[0])
+	}
+	if connections[0].StatusReason != "" {
+		t.Fatalf("expected empty status reason, got %#v", connections[0])
+	}
 }

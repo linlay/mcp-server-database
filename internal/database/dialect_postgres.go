@@ -9,6 +9,14 @@ import (
 
 type postgresDialect struct{}
 
+func (postgresDialect) Probe(ctx context.Context, db *sql.DB, _ ConnectionConfig) error {
+	var ready int
+	if err := db.QueryRowContext(ctx, `select 1`).Scan(&ready); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (postgresDialect) ResolveDefaultSchema(ctx context.Context, db *sql.DB, _ ConnectionConfig) (string, error) {
 	var schema sql.NullString
 	if err := db.QueryRowContext(ctx, `select current_schema()`).Scan(&schema); err != nil {

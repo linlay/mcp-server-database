@@ -12,6 +12,10 @@ type schemaTestDialect struct {
 	resolve func(context.Context, *sql.DB, ConnectionConfig) (string, error)
 }
 
+func (schemaTestDialect) Probe(context.Context, *sql.DB, ConnectionConfig) error {
+	return nil
+}
+
 func (d schemaTestDialect) ResolveDefaultSchema(ctx context.Context, db *sql.DB, cfg ConnectionConfig) (string, error) {
 	return d.resolve(ctx, db, cfg)
 }

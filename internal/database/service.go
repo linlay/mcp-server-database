@@ -31,12 +31,15 @@ type managedConnection struct {
 }
 
 type dialect interface {
+	Probe(ctx context.Context, db *sql.DB, cfg ConnectionConfig) error
 	ResolveDefaultSchema(ctx context.Context, db *sql.DB, cfg ConnectionConfig) (string, error)
 	ListSchemas(ctx context.Context, db *sql.DB, cfg ConnectionConfig) ([]SchemaInfo, error)
 	ListTables(ctx context.Context, db *sql.DB, cfg ConnectionConfig, schema string) ([]TableInfo, error)
 	DescribeTable(ctx context.Context, db *sql.DB, cfg ConnectionConfig, schema string, table string) (TableDescription, error)
 	ListIndexes(ctx context.Context, db *sql.DB, cfg ConnectionConfig, schema string, table string) ([]IndexInfo, error)
 }
+
+const listConnectionsProbeTimeout = 3 * time.Second
 
 func NewService(cfg Config) (Service, error) {
 	if strings.TrimSpace(cfg.ConnectionsConfigPath) == "" {
@@ -96,8 +99,8 @@ func (m *manager) ListConnections(ctx context.Context) ([]ConnectionSummary, err
 	for _, conn := range m.sortedConnections() {
 		status := "ready"
 		statusReason := ""
-		pingCtx, cancel := context.WithTimeout(ctx, time.Second)
-		if err := conn.ping(pingCtx); err != nil {
+		probeCtx, cancel := context.WithTimeout(ctx, listConnectionsProbeTimeout)
+		if err := conn.probe(probeCtx); err != nil {
 			status = "error"
 			statusReason = sanitizeConnectionError(conn.cfg, err)
 		}
@@ -408,6 +411,14 @@ func (c *managedConnection) ping(ctx context.Context) error {
 		return err
 	}
 	return db.PingContext(ctx)
+}
+
+func (c *managedConnection) probe(ctx context.Context) error {
+	db, err := c.open()
+	if err != nil {
+		return err
+	}
+	return c.dialect.Probe(ctx, db, c.cfg)
 }
 
 func (c *managedConnection) resolveSchema(ctx context.Context, db *sql.DB, schema string) (string, error) {

@@ -9,6 +9,14 @@ import (
 
 type sqliteDialect struct{}
 
+func (sqliteDialect) Probe(ctx context.Context, db *sql.DB, _ ConnectionConfig) error {
+	var ready int
+	if err := db.QueryRowContext(ctx, `select 1`).Scan(&ready); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (sqliteDialect) ResolveDefaultSchema(context.Context, *sql.DB, ConnectionConfig) (string, error) {
 	return "main", nil
 }
